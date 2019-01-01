@@ -32,16 +32,6 @@ if __name__ == '__main__':
         help='use GPU for processing',
         action='store_true'
     )
-    parser.add_argument(
-        '-d',
-        metavar='src_dump_path',
-        help='dump source pixel array to the file'
-    )
-    parser.add_argument(
-        '-D',
-        metavar='result_dump_path',
-        help='dump resulting pixel array to the file'
-    )
     args = parser.parse_args()
 
     source_array = None
@@ -78,36 +68,6 @@ if __name__ == '__main__':
             filter_end - filter_start,
             'seconds.'
         )
-
-    if args.d:
-        try:
-            dump_start = timeit.default_timer()
-            with open(args.d, "w") as f:
-                f.write(str(source_array))
-
-            dump_end = timeit.default_timer()
-            print(
-                'Time spent dumping source pixel array:',
-                dump_end - dump_start,
-                'seconds'
-            )
-        except OSError as e:
-            print(e, file=sys.stderr)
-
-    if args.D:
-        try:
-            dump_start = timeit.default_timer()
-            with open(args.D, 'w') as f:
-                f.write(str(dest_array))
-
-            dump_end = timeit.default_timer()
-            print(
-                'Time spent dumping resulting pixel array:',
-                dump_end - dump_start,
-                'seconds'
-            )
-        except OSError as e:
-            print(e, file=sys.stderr)
 
     try:
         save_start = timeit.default_timer()
