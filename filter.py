@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import math
 import sys
 import timeit
 
@@ -7,6 +8,9 @@ import numpy as np
 from PIL import Image
 
 from filters import cpu, gpu
+
+DEFAULT_STANDARD_DEVIATION = 2.0
+DEFAULT_FILTER_WIDTH = math.trunc(3 * DEFAULT_STANDARD_DEVIATION)
 
 if __name__ == '__main__':
     program_start = timeit.default_timer()
@@ -16,13 +20,13 @@ if __name__ == '__main__':
     )
     parser.add_argument('image_src', help='source image file path')
     parser.add_argument('image_result', help='resulting image file path')
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument(
+    filter_group = parser.add_mutually_exclusive_group(required=True)
+    filter_group.add_argument(
         '-g',
         help='apply greyscale filter',
         action='store_true'
     )
-    group.add_argument(
+    filter_group.add_argument(
         '-b',
         help='apply blur filter',
         action='store_true'
@@ -31,6 +35,20 @@ if __name__ == '__main__':
         '-f',
         help='use GPU for processing',
         action='store_true'
+    )
+    blur_group = parser.add_argument_group('blur arguments', 'optional blur arguments')
+    blur_group.add_argument(
+        '-d',
+        help='standard deviation',
+        metavar='deviation',
+        default=DEFAULT_STANDARD_DEVIATION,
+        required=False
+    )
+    blur_group.add_argument(
+        '-w',
+        help='filter width',
+        metavar='width',
+        required=False
     )
     args = parser.parse_args()
 
@@ -46,6 +64,19 @@ if __name__ == '__main__':
         source_array = np.array(image)  # shape = (height, width, channels)
 
         filter_start = timeit.default_timer()
+
+        try:
+            standard_deviation = float(args.d)
+            filter_width = args.w if args.w else math.trunc(3 * int(args.d))
+        except ValueError as e:
+            print(e, file=sys.stderr)
+
+            standard_deviation = DEFAULT_STANDARD_DEVIATION
+            filter_width = DEFAULT_FILTER_WIDTH
+
+        if filter_width % 2 == 0:
+            filter_width = filter_width - 1
+
         if args.f:
             if args.g:
                 try:
@@ -60,7 +91,11 @@ if __name__ == '__main__':
                 dest_array = cpu.grayscale.apply(source_array)
 
             if args.b:
-                pass
+                dest_array = cpu.blur.apply(
+                    source_array,
+                    args.d,
+                    filter_width
+                )
 
         filter_end = timeit.default_timer()
         print(
