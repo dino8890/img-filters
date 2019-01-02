@@ -4,13 +4,13 @@ import sys
 import timeit
 
 import numpy as np
-from PIL import Image
+import PIL.Image
 
 from filters import cpu, gpu
-from filters import DEFAULT_STANDARD_DEVIATION
-from filters import DEFAULT_FILTER_WIDTH
+from filters import DEFAULT_STANDARD_DEVIATION, DEFAULT_FILTER_WIDTH
 
-if __name__ == '__main__':
+
+def main():
     program_start = timeit.default_timer()
 
     parser = argparse.ArgumentParser(
@@ -21,7 +21,7 @@ if __name__ == '__main__':
     filter_group = parser.add_mutually_exclusive_group(required=True)
     filter_group.add_argument(
         '-g',
-        help='apply greyscale filter',
+        help='apply grayscale filter',
         action='store_true'
     )
     filter_group.add_argument(
@@ -53,51 +53,47 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
 
-    source_array = None
-    dest_array = None
-
+    result_array = None
     if args.g or args.b:
         try:
-            image = Image.open(args.image_src)
+            image = PIL.Image.open(args.image_src)
+            source_array = np.array(image)  # shape = (height, width, channels)
         except FileNotFoundError as e:
             sys.exit(e)
 
-        source_array = np.array(image)  # shape = (height, width, channels)
-
-        filter_start = timeit.default_timer()
-
-        standard_deviation = 0
         try:
             standard_deviation = float(args.d)
-        except ValueError as e:
+        except ValueError:
             print(
                 'Invalid standard deviation value, continuing with {0}.'.format(
                     DEFAULT_STANDARD_DEVIATION
-                )
+                ),
+                file=sys.stderr
             )
             standard_deviation = DEFAULT_STANDARD_DEVIATION
 
-        filter_width = 0
         try:
             if args.w:
                 filter_width = int(args.w)
             else:
                 filter_width = DEFAULT_FILTER_WIDTH
-        except ValueError as e:
+        except ValueError:
             print(
                 'Invalid filter width value, continuing with {0}.'.format(
                     DEFAULT_FILTER_WIDTH
-                )
+                ),
+                file=sys.stderr
             )
             filter_width = DEFAULT_FILTER_WIDTH
         finally:
             if filter_width % 2 == 0:
                 filter_width = filter_width - 1
 
+        filter_start = timeit.default_timer()
         if args.f:
             if args.g:
                 try:
-                    dest_array = gpu.grayscale.apply(source_array)
+                    result_array = gpu.grayscale.apply(source_array)
                 except ValueError as e:
                     sys.exit(e)
 
@@ -105,10 +101,10 @@ if __name__ == '__main__':
                 pass
         else:
             if args.g:
-                dest_array = cpu.grayscale.apply(source_array)
+                result_array = cpu.grayscale.apply(source_array)
 
             if args.b:
-                dest_array = cpu.blur.apply(
+                result_array = cpu.blur.apply(
                     source_array,
                     standard_deviation,
                     filter_width
@@ -123,7 +119,7 @@ if __name__ == '__main__':
 
     try:
         save_start = timeit.default_timer()
-        Image.fromarray(dest_array).save(args.image_result)
+        PIL.Image.fromarray(result_array).save(args.image_result)
 
         save_end = timeit.default_timer()
         print('Time spent saving image:', save_end - save_start, 'seconds')
@@ -132,3 +128,10 @@ if __name__ == '__main__':
 
     program_end = timeit.default_timer()
     print('Total time spent running:', program_end - program_start, 'seconds')
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except KeyboardInterrupt:
+        pass
