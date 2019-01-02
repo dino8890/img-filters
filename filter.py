@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import argparse
-import math
 import sys
 import timeit
 
@@ -8,9 +7,8 @@ import numpy as np
 from PIL import Image
 
 from filters import cpu, gpu
-
-DEFAULT_STANDARD_DEVIATION = 2.0
-DEFAULT_FILTER_WIDTH = math.trunc(3 * DEFAULT_STANDARD_DEVIATION)
+from filters import DEFAULT_STANDARD_DEVIATION
+from filters import DEFAULT_FILTER_WIDTH
 
 if __name__ == '__main__':
     program_start = timeit.default_timer()
@@ -36,7 +34,10 @@ if __name__ == '__main__':
         help='use GPU for processing',
         action='store_true'
     )
-    blur_group = parser.add_argument_group('blur arguments', 'optional blur arguments')
+    blur_group = parser.add_argument_group(
+        'blur arguments',
+        'optional blur arguments'
+    )
     blur_group.add_argument(
         '-d',
         help='standard deviation',
@@ -65,17 +66,33 @@ if __name__ == '__main__':
 
         filter_start = timeit.default_timer()
 
+        standard_deviation = 0
         try:
             standard_deviation = float(args.d)
-            filter_width = args.w if args.w else math.trunc(3 * int(args.d))
         except ValueError as e:
-            print(e, file=sys.stderr)
-
+            print(
+                'Invalid standard deviation value, continuing with {0}.'.format(
+                    DEFAULT_STANDARD_DEVIATION
+                )
+            )
             standard_deviation = DEFAULT_STANDARD_DEVIATION
-            filter_width = DEFAULT_FILTER_WIDTH
 
-        if filter_width % 2 == 0:
-            filter_width = filter_width - 1
+        filter_width = 0
+        try:
+            if args.w:
+                filter_width = int(args.w)
+            else:
+                filter_width = DEFAULT_FILTER_WIDTH
+        except ValueError as e:
+            print(
+                'Invalid filter width value, continuing with {0}.'.format(
+                    DEFAULT_FILTER_WIDTH
+                )
+            )
+            filter_width = DEFAULT_FILTER_WIDTH
+        finally:
+            if filter_width % 2 == 0:
+                filter_width = filter_width - 1
 
         if args.f:
             if args.g:
@@ -93,7 +110,7 @@ if __name__ == '__main__':
             if args.b:
                 dest_array = cpu.blur.apply(
                     source_array,
-                    args.d,
+                    standard_deviation,
                     filter_width
                 )
 
