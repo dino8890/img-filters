@@ -1,2 +1,2 @@
-# from . import blur
+from . import blur
 from . import grayscale

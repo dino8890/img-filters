@@ -91,14 +91,17 @@ def main():
 
         filter_start = timeit.default_timer()
         if args.f:
-            if args.g:
-                try:
+            try:
+                if args.g:
                     result_array = gpu.grayscale.apply(source_array)
-                except ValueError as e:
-                    sys.exit(e)
-
-            if args.b:
-                pass
+                else:
+                    result_array = gpu.blur.apply(
+                        source_array,
+                        standard_deviation,
+                        filter_width
+                    )
+            except ValueError as e:
+                sys.exit(e)
         else:
             if args.g:
                 result_array = cpu.grayscale.apply(source_array)
