@@ -1,5 +1,7 @@
 import numpy as np
 
+DIM_BLOCK = 32
+
 
 def create_gaussian_kernel(filter_width, standard_deviation):
     matrix = np.empty((filter_width, filter_width), np.float32)

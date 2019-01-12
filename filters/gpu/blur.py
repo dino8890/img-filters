@@ -5,9 +5,8 @@ import pycuda.autoinit
 from pycuda import driver
 from pycuda import compiler
 
-from .. import utilities
+from .. import shared
 
-DIM_BLOCK = 32
 CUDA_KERNEL_CODE_PATH = 'filters/gpu/blur.cu'
 
 
@@ -19,8 +18,8 @@ def apply(source_array, standard_deviation, filter_width):
 
     height, width = source_array.shape[:2]
 
-    dim_grid_x = math.ceil(width / DIM_BLOCK)
-    dim_grid_y = math.ceil(height / DIM_BLOCK)
+    dim_grid_x = math.ceil(width / shared.DIM_BLOCK)
+    dim_grid_y = math.ceil(height / shared.DIM_BLOCK)
 
     max_num_blocks = (
             pycuda.autoinit.device.get_attribute(
@@ -36,23 +35,23 @@ def apply(source_array, standard_deviation, filter_width):
             'image dimensions too great, maximum block number exceeded'
         )
 
-    gaussian_kernel = utilities.create_gaussian_kernel(
+    gaussian_kernel = shared.create_gaussian_kernel(
         filter_width,
         standard_deviation
     )
 
     mod = compiler.SourceModule(open(CUDA_KERNEL_CODE_PATH).read())
-    apply_filter = mod.get_function('apply_filter')
+    apply_filter = mod.get_function('applyFilter')
 
     for channel in (red_channel, green_channel, blue_channel):
         apply_filter(
             driver.In(channel),
             driver.Out(channel),
-            np.int32(width),
-            np.int32(height),
+            np.uint32(width),
+            np.uint32(height),
             driver.In(gaussian_kernel),
-            np.int32(filter_width),
-            block=(DIM_BLOCK, DIM_BLOCK, 1),
+            np.uint32(filter_width),
+            block=(shared.DIM_BLOCK, shared.DIM_BLOCK, 1),
             grid=(dim_grid_x, dim_grid_y)
         )
 

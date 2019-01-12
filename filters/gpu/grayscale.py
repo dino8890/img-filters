@@ -5,19 +5,7 @@ import pycuda.autoinit
 from pycuda import driver
 from pycuda import compiler
 
-DIM_BLOCK = 32
-
-
-def _nearest_multiple(a, b):
-    return int(math.ceil(a / b) * b)
-
-
-def _largest_factors(x):
-    i = x - 1
-    while x % i != 0:
-        i -= 1
-
-    return int(i), int(x / i)
+from .. import shared
 
 
 def apply(source_array):
@@ -28,9 +16,8 @@ def apply(source_array):
 
     height, width = source_array.shape[:2]
 
-    num_blocks = (_nearest_multiple(width, DIM_BLOCK)
-                  * _nearest_multiple(height, DIM_BLOCK)
-                  / DIM_BLOCK**2)
+    dim_grid_x = math.ceil(width / shared.DIM_BLOCK)
+    dim_grid_y = math.ceil(height / shared.DIM_BLOCK)
 
     max_num_blocks = (
             pycuda.autoinit.device.get_attribute(
@@ -41,15 +28,13 @@ def apply(source_array):
             )
     )
 
-    if num_blocks > max_num_blocks:
+    if (dim_grid_x * dim_grid_y) > max_num_blocks:
         raise ValueError(
             'image dimensions too great, maximum block number exceeded'
         )
 
-    dim_grid_x, dim_grid_y = _largest_factors(num_blocks)
-
     mod = compiler.SourceModule(open('filters/gpu/grayscale.cu').read())
-    apply_filter = mod.get_function('apply_filter')
+    apply_filter = mod.get_function('applyFilter')
 
     apply_filter(
         driver.InOut(red_channel),
@@ -57,7 +42,7 @@ def apply(source_array):
         driver.InOut(blue_channel),
         np.uint32(width),
         np.uint32(height),
-        block=(DIM_BLOCK, DIM_BLOCK, 1),
+        block=(shared.DIM_BLOCK, shared.DIM_BLOCK, 1),
         grid=(dim_grid_x, dim_grid_y)
     )
 

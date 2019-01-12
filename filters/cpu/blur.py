@@ -1,10 +1,10 @@
-from .. import utilities
+from .. import shared
 
 
 def apply(source_array, standard_deviation, filter_width):
     result_array = source_array.copy()
 
-    kernel = utilities.create_gaussian_kernel(filter_width, standard_deviation)
+    kernel = shared.create_gaussian_kernel(filter_width, standard_deviation)
     filter_half = filter_width // 2
     for i in range(result_array.shape[0]):
         for j in range(result_array.shape[1]):

@@ -65,7 +65,8 @@ def main():
             standard_deviation = float(args.d)
         except ValueError:
             print(
-                'Invalid standard deviation value, continuing with {0}.'.format(
+                ('Invalid standard deviation value, '
+                 'continuing with {0}.').format(
                     DEFAULT_STANDARD_DEVIATION
                 ),
                 file=sys.stderr
