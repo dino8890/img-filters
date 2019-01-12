@@ -1,25 +1,10 @@
-import math
-
-import numpy as np
-
-
-def _create_gaussian_kernel(filter_width, standard_deviation):
-    matrix = np.empty((filter_width, filter_width))
-    filter_half = filter_width // 2
-    for i in range(-filter_half, filter_half + 1):
-        for j in range(-filter_half, filter_half + 1):
-            matrix[i + filter_half][j + filter_half] = (
-                math.exp(-(i**2 + j**2) / (2 * standard_deviation**2))
-                / (2 * math.pi * standard_deviation**2)
-            )
-
-    return matrix / matrix.sum()
+from .. import utilities
 
 
 def apply(source_array, standard_deviation, filter_width):
     result_array = source_array.copy()
 
-    kernel = _create_gaussian_kernel(filter_width, standard_deviation)
+    kernel = utilities.create_gaussian_kernel(filter_width, standard_deviation)
     filter_half = filter_width // 2
     for i in range(result_array.shape[0]):
         for j in range(result_array.shape[1]):

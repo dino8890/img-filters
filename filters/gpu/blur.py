@@ -5,21 +5,10 @@ import pycuda.autoinit
 from pycuda import driver
 from pycuda import compiler
 
+from .. import utilities
+
 DIM_BLOCK = 32
 CUDA_KERNEL_CODE_PATH = 'filters/gpu/blur.cu'
-
-
-def _create_gaussian_kernel(filter_width, standard_deviation):
-    matrix = np.empty((filter_width, filter_width), np.float32)
-    filter_half = filter_width // 2
-    for i in range(-filter_half, filter_half + 1):
-        for j in range(-filter_half, filter_half + 1):
-            matrix[i + filter_half][j + filter_half] = (
-                math.exp(-(i**2 + j**2) / (2 * standard_deviation**2))
-                / (2 * math.pi * standard_deviation**2)
-            )
-
-    return matrix / matrix.sum()
 
 
 def apply(source_array, standard_deviation, filter_width):
@@ -47,7 +36,10 @@ def apply(source_array, standard_deviation, filter_width):
             'image dimensions too great, maximum block number exceeded'
         )
 
-    gaussian_kernel = _create_gaussian_kernel(filter_width, standard_deviation)
+    gaussian_kernel = utilities.create_gaussian_kernel(
+        filter_width,
+        standard_deviation
+    )
 
     mod = compiler.SourceModule(open(CUDA_KERNEL_CODE_PATH).read())
     apply_filter = mod.get_function('apply_filter')
