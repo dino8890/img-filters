@@ -13,7 +13,7 @@ Feel free to open new issues if you find any or you have a question you want to 
 
 ### Grayscale filter using CPU
 
-`python3 filter.py source.png dest.png -g
+`python3 filter.py source.png dest.png -g`
 
 ### Output help text
 
