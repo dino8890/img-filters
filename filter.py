@@ -6,7 +6,14 @@ import timeit
 import numpy as np
 import PIL.Image
 
-from filters import cpu, gpu
+from filters import cpu
+
+try:
+    from filters import gpu
+    gpu_import_error = False
+except ImportError as e:
+    gpu_import_error = e
+
 from filters import DEFAULT_STANDARD_DEVIATION, DEFAULT_FILTER_WIDTH
 
 
@@ -91,7 +98,7 @@ def main():
                 filter_width = filter_width - 1
 
         filter_start = timeit.default_timer()
-        if args.f:
+        if args.f and not gpu_import_error:
             try:
                 if args.g:
                     result_array = gpu.grayscale.apply(source_array)
@@ -104,6 +111,14 @@ def main():
             except ValueError as e:
                 sys.exit(e)
         else:
+            if args.f:
+                print(
+                    'Warning: GPU capabilities disabled, defaulting to CPU.',
+                    '{0}'.format(gpu_import_error),
+                    sep='\n',
+                    file=sys.stderr
+                )
+
             if args.g:
                 result_array = cpu.grayscale.apply(source_array)
 
